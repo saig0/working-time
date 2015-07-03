@@ -8,11 +8,15 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Timer;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import de.wt.model.Example;
+import de.wt.model.WorkLogEntry;
+import de.wt.model.WorkingLog;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.DoubleProperty;
@@ -45,12 +49,10 @@ public class Controller {
 	private Label weekField;
 
 	private Duration workedTime = Duration.ZERO;
+	private Duration workedTimeInWeek = Duration.ZERO;
 
 	private DoubleProperty workedTimeOfDay = new SimpleDoubleProperty(0);
 	private DoubleProperty workedTimeOfWeek = new SimpleDoubleProperty(0);
-
-	private Instant startTime;
-	private Instant lastUpdated;
 
 	private StringProperty currentTime = new SimpleStringProperty();
 	private StringProperty currentDate = new SimpleStringProperty();
@@ -70,6 +72,8 @@ public class Controller {
 			.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.GERMAN)
 			.withZone(ZoneId.systemDefault());
 
+	private WorkingLog log = new Example().create();
+
 	@FXML
 	private void initialize() {
 
@@ -86,31 +90,41 @@ public class Controller {
 						currentDate.set(dateFormatter.format(now));
 
 						if (running) {
-							// Duration duration = Duration.between(lastUpdated,
-							// now);
-							Duration duration = Duration.ofHours(1);
+							Instant startTime = getLogEntry().getStartTime();
 
-							workedTime = workedTime.plus(duration);
+							Duration duration = Duration
+									.between(startTime, now);
+
+							workedTime = duration;
 
 							workedTimeOfDay.set(Double.valueOf(workedTime
 									.toMinutes())
 									/ Duration.ofHours(8).toMinutes());
-							workedTimeDay.set(getFormattedWorkTime());
+							workedTimeDay.set(getFormattedWorkTime(workedTime));
 
-							workedTimeOfWeek.set(Double.valueOf(workedTime
-									.toMinutes())
+							workedTimeInWeek = Duration.ZERO;
+							log.getWorkLogEntriesForWeek()
+									.stream()
+									.forEach(
+											l -> {
+												Duration d = Duration.between(
+														l.getStartTime(),
+														Optional.ofNullable(
+																l.getEndTime())
+																.orElse(now));
+												workedTimeInWeek = workedTimeInWeek
+														.plus(d);
+											});
+
+							workedTimeOfWeek.set(Double
+									.valueOf(workedTimeInWeek.toMinutes())
 									/ Duration.ofHours(40).toMinutes());
-							workedTimeWeek.set(getFormattedWorkTime());
-
-							lastUpdated = now;
+							workedTimeWeek
+									.set(getFormattedWorkTime(workedTimeInWeek));
 						}
 
 					}
 
-					private String getFormattedWorkTime() {
-						return String.format("%02d:%02d", workedTime.toHours(),
-								workedTime.toMinutes() % 60);
-					}
 				});
 			}
 		}, 0, 1, TimeUnit.SECONDS);
@@ -123,23 +137,61 @@ public class Controller {
 
 		progressDay.progressProperty().bind(workedTimeOfDay);
 		progressWeek.progressProperty().bind(workedTimeOfWeek);
+
+		// DRY
+		log.getWorkLogEntryForToday().ifPresent(
+				logEntry -> {
+					workedTime = Duration.between(logEntry.getStartTime(),
+							logEntry.getEndTime());
+
+					workedTimeOfDay.set(Double.valueOf(workedTime.toMinutes())
+							/ Duration.ofHours(8).toMinutes());
+					workedTimeDay.set(getFormattedWorkTime(workedTime));
+				});
+		// DRY
+		workedTimeInWeek = Duration.ZERO;
+		log.getWorkLogEntriesForWeek()
+				.stream()
+				.forEach(
+						l -> {
+							workedTimeInWeek = workedTimeInWeek.plus(Duration
+									.between(l.getStartTime(), l.getEndTime()));
+						});
+
+		workedTimeOfWeek.set(Double.valueOf(workedTimeInWeek.toMinutes())
+				/ Duration.ofHours(40).toMinutes());
+		workedTimeWeek.set(getFormattedWorkTime(workedTimeInWeek));
+
+	}
+
+	private String getFormattedWorkTime(Duration workedTime) {
+		return String.format("%02d:%02d", workedTime.toHours(),
+				workedTime.toMinutes() % 60);
 	}
 
 	@FXML
 	public void start(ActionEvent event) {
 		System.out.println("start");
 
-		lastUpdated = Instant.now();
-
 		running = true;
 
-		startTime = Instant.now();
+		Instant startTime = Instant.now();
+		log.getWorkLogEntries().add(new WorkLogEntry(startTime));
 	}
 
 	@FXML
 	public void stop(ActionEvent event) {
 		System.out.println("stop");
 		running = false;
+
+		WorkLogEntry logEntry = getLogEntry();
+		logEntry.setEndTime(Instant.now());
+	}
+
+	private WorkLogEntry getLogEntry() {
+		WorkLogEntry logEntry = log.getWorkLogEntryForToday().orElseThrow(
+				() -> new IllegalStateException());
+		return logEntry;
 	}
 
 	public void onShutDown() {

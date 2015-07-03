@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.*?>
+<?import javafx.scene.shape.*?>
 <?import javafx.scene.effect.*?>
 <?import javafx.geometry.*?>
 <?import java.lang.*?>
@@ -9,7 +11,7 @@
 <?import javafx.scene.paint.*?>
 <?import javafx.scene.text.*?>
 
-<VBox prefHeight="400.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+<VBox prefHeight="400.0" prefWidth="488.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
   <children>
     <MenuBar VBox.vgrow="NEVER">
       <menus>
@@ -52,43 +54,179 @@
     </MenuBar>
     <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="-1.0" prefWidth="-1.0" VBox.vgrow="ALWAYS">
          <children>
-            <VBox spacing="10.0">
-               <children>
-                  <Label fx:id="timeField" text="hh:mm">
-                     <font>
-                        <Font name="System Bold" size="36.0" />
-                     </font>
-                  </Label>
-                  <Label fx:id="dateField" text="dd:mm:yyyy">
-                     <font>
-                        <Font name="System Italic" size="14.0" />
-                     </font>
-                  </Label>
-                  <HBox spacing="5.0">
-                     <children>
-                        <Button mnemonicParsing="false" onAction="#start" text="Start" />
-                        <Button mnemonicParsing="false" onAction="#stop" text="Ende" />
-                     </children>
-                  </HBox>
-                  <HBox spacing="5.0">
-                     <children>
-                        <Label prefHeight="17.0" prefWidth="103.0" text="Arbeitstag" />
-                        <ProgressBar fx:id="progressDay" prefWidth="200.0" progress="0.0" />
-                        <Label fx:id="dayField" text="hh:mm" />
-                     </children>
-                  </HBox>
-                  <HBox spacing="5.0">
-                     <children>
-                        <Label prefHeight="17.0" prefWidth="103.0" text="Arbeitswoche" />
-                        <ProgressBar fx:id="progressWeek" prefWidth="200.0" progress="0.0" />
-                        <Label fx:id="weekField" text="hh:mm" />
-                     </children>
-                  </HBox>
-               </children>
-               <padding>
-                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-               </padding>
-            </VBox>
+            <TabPane tabClosingPolicy="UNAVAILABLE">
+               <tabs>
+                  <Tab text="Zeiterfassung">
+                     <content>
+                        <VBox spacing="10.0">
+                           <children>
+                              <VBox>
+                                 <children>
+                                    <Label fx:id="timeField" text="hh:mm">
+                                       <font>
+                                          <Font name="System Bold" size="36.0" />
+                                       </font>
+                                    </Label>
+                                    <Label fx:id="dateField" text="dd:mm:yyyy">
+                                       <font>
+                                          <Font name="System Italic" size="14.0" />
+                                       </font>
+                                       <VBox.margin>
+                                          <Insets left="15.0" />
+                                       </VBox.margin>
+                                    </Label>
+                                 </children>
+                                 <VBox.margin>
+                                    <Insets />
+                                 </VBox.margin>
+                                 <padding>
+                                    <Insets left="75.0" />
+                                 </padding>
+                              </VBox>
+                              <HBox spacing="5.0">
+                                 <children>
+                                    <Button mnemonicParsing="false" onAction="#start" text="Start" />
+                                    <Button mnemonicParsing="false" onAction="#stop" text="Ende" />
+                                    <Button mnemonicParsing="false">
+                                       <graphic>
+                                          <Group>
+                                             <children>
+                                                <Polygon layoutX="368.0" layoutY="184.0" rotate="90.0" scaleX="0.4" scaleY="0.3" stroke="BLACK" strokeType="INSIDE">
+                                                  <points>
+                                                    <Double fx:value="-50.0" />
+                                                    <Double fx:value="40.0" />
+                                                    <Double fx:value="50.0" />
+                                                    <Double fx:value="40.0" />
+                                                    <Double fx:value="0.0" />
+                                                    <Double fx:value="-60.0" />
+                                                  </points>
+                                                   <fill>
+                                                      <LinearGradient endX="1.0" endY="1.0">
+                                                         <stops>
+                                                            <Stop color="#1882e4" />
+                                                            <Stop color="WHITE" offset="1.0" />
+                                                         </stops>
+                                                      </LinearGradient>
+                                                   </fill>
+                                                   <cursor>
+                                                      <Cursor fx:constant="DEFAULT" />
+                                                   </cursor>
+                                                   <effect>
+                                                      <DropShadow />
+                                                   </effect>
+                                                </Polygon>
+                                             </children>
+                                          </Group>
+                                       </graphic>
+                                    </Button>
+                                    <Button mnemonicParsing="false">
+                                       <graphic>
+                                          <Group>
+                                             <children>
+                                                <Rectangle arcHeight="5.0" arcWidth="5.0" height="30.0" layoutX="350.0" layoutY="209.0" stroke="BLACK" strokeType="INSIDE" width="13.0">
+                                                   <fill>
+                                                      <LinearGradient endX="1.0" endY="1.0">
+                                                         <stops>
+                                                            <Stop color="#e1ad3d" />
+                                                            <Stop color="WHITE" offset="1.0" />
+                                                         </stops>
+                                                      </LinearGradient>
+                                                   </fill>
+                                                   <effect>
+                                                      <DropShadow />
+                                                   </effect>
+                                                </Rectangle>
+                                                <Rectangle arcHeight="5.0" arcWidth="5.0" height="30.0" layoutX="365.0" layoutY="209.0" stroke="BLACK" strokeType="INSIDE" width="13.0">
+                                                   <fill>
+                                                      <LinearGradient endX="1.0" endY="1.0">
+                                                         <stops>
+                                                            <Stop color="#e1ad3d" />
+                                                            <Stop color="WHITE" offset="1.0" />
+                                                         </stops>
+                                                      </LinearGradient>
+                                                   </fill>
+                                                   <effect>
+                                                      <DropShadow />
+                                                   </effect>
+                                                </Rectangle>
+                                             </children>
+                                          </Group>
+                                       </graphic>
+                                    </Button>
+                                    <Button mnemonicParsing="false">
+                                       <graphic>
+                                          <Group>
+                                             <children>
+                                                <Rectangle arcHeight="5.0" arcWidth="5.0" height="30.0" stroke="BLACK" strokeType="INSIDE" width="30.0">
+                                                   <effect>
+                                                      <DropShadow />
+                                                   </effect>
+                                                   <fill>
+                                                      <LinearGradient endX="1.0" endY="1.0">
+                                                         <stops>
+                                                            <Stop color="#b93f1a" />
+                                                            <Stop color="WHITE" offset="1.0" />
+                                                         </stops>
+                                                      </LinearGradient>
+                                                   </fill>
+                                                </Rectangle>
+                                             </children>
+                                          </Group>
+                                       </graphic>
+                                    </Button>
+                                 </children>
+                              </HBox>
+                              <TitledPane animated="false" collapsible="false" text="Arbeitstag">
+                                 <content>
+                                    <HBox spacing="5.0">
+                                       <children>
+                                          <ProgressBar fx:id="progressDay" prefWidth="200.0" progress="0.0" />
+                                          <Label fx:id="dayField" text="hh:mm" />
+                                       </children>
+                                    </HBox>
+                                 </content>
+                              </TitledPane>
+                              <TitledPane animated="false" collapsible="false" text="Arbeitswoche">
+                                 <content>
+                                    <HBox spacing="5.0">
+                                       <children>
+                                          <ProgressBar fx:id="progressWeek" prefWidth="200.0" progress="0.0" />
+                                          <Label fx:id="weekField" text="hh:mm" />
+                                       </children>
+                                    </HBox>
+                                 </content>
+                              </TitledPane>
+                           </children>
+                           <padding>
+                              <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                           </padding>
+                        </VBox>
+                     </content>
+                  </Tab>
+                  <Tab text="Log">
+                    <content>
+                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                           <children>
+                              <VBox spacing="10.0">
+                                 <children>
+                                    <TableView prefHeight="283.0" prefWidth="284.0">
+                                      <columns>
+                                        <TableColumn prefWidth="103.0" text="Start" />
+                                        <TableColumn prefWidth="98.0" text="Ende" />
+                                          <TableColumn prefWidth="67.0" text="Dauer" />
+                                      </columns>
+                                    </TableView>
+                                 </children>
+                                 <padding>
+                                    <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                 </padding>
+                              </VBox>
+                           </children>
+                        </AnchorPane>
+                    </content>
+                  </Tab>
+               </tabs>
+            </TabPane>
          </children>
     </AnchorPane>
   </children>
