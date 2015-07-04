@@ -12,7 +12,7 @@
 <?import javafx.scene.paint.*?>
 <?import javafx.scene.text.*?>
 
-<VBox prefHeight="400.0" prefWidth="488.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+<VBox xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
   <children>
     <MenuBar VBox.vgrow="NEVER">
       <menus>
@@ -43,7 +43,7 @@
         </Menu>
       </menus>
     </MenuBar>
-    <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="-1.0" prefWidth="-1.0" VBox.vgrow="ALWAYS">
+    <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="340.0" prefWidth="274.0" VBox.vgrow="ALWAYS">
          <children>
             <TabPane tabClosingPolicy="UNAVAILABLE">
                <tabs>
@@ -197,15 +197,16 @@
                   </Tab>
                   <Tab text="Log">
                     <content>
-                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                      <AnchorPane>
                            <children>
                               <VBox spacing="10.0">
                                  <children>
-                                    <TableView prefHeight="283.0" prefWidth="284.0">
+                                    <TableView fx:id="workLogTable" prefHeight="285.0" prefWidth="263.0">
                                       <columns>
-                                        <TableColumn prefWidth="103.0" text="Start" />
-                                        <TableColumn prefWidth="98.0" text="Ende" />
-                                          <TableColumn prefWidth="67.0" text="Dauer" />
+                                          <TableColumn fx:id="dateColumn" text="Datum" />
+                                        <TableColumn fx:id="startTimeColumn" editable="false" prefWidth="55.0" text="Start" />
+                                        <TableColumn fx:id="endTimeColumn" editable="false" prefWidth="55.0" text="Ende" />
+                                          <TableColumn fx:id="durationColumn" editable="false" prefWidth="55.0" text="Dauer" />
                                       </columns>
                                     </TableView>
                                  </children>

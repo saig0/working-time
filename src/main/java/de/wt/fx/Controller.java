@@ -3,6 +3,7 @@ package de.wt.fx;
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -29,6 +30,10 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableColumn.CellDataFeatures;
+import javafx.scene.control.TableView;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
@@ -53,6 +58,21 @@ public class Controller {
 	@FXML
 	private Label weekField;
 
+	@FXML
+	private TableView<WorkLogEntry> workLogTable;
+
+	@FXML
+	private TableColumn<WorkLogEntry, String> startTimeColumn;
+
+	@FXML
+	private TableColumn<WorkLogEntry, String> endTimeColumn;
+
+	@FXML
+	private TableColumn<WorkLogEntry, String> durationColumn;
+
+	@FXML
+	private TableColumn<WorkLogEntry, String> dateColumn;
+
 	private Duration workedTime = Duration.ZERO;
 	private Duration workedTimeInWeek = Duration.ZERO;
 
@@ -73,8 +93,13 @@ public class Controller {
 	private final DateTimeFormatter timeFormatter = DateTimeFormatter
 			.ofLocalizedTime(FormatStyle.SHORT).withLocale(Locale.GERMAN)
 			.withZone(ZoneId.systemDefault());
+
 	private final DateTimeFormatter dateFormatter = DateTimeFormatter
 			.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.GERMAN)
+			.withZone(ZoneId.systemDefault());
+
+	private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter
+			.ofLocalizedDateTime(FormatStyle.MEDIUM).withLocale(Locale.GERMAN)
 			.withZone(ZoneId.systemDefault());
 
 	private WorkingLog log = loadInitialWoringLog();
@@ -85,7 +110,7 @@ public class Controller {
 	}
 
 	private final Stage primaryStage;
-	
+
 	public Controller(Stage primaryStage) {
 		this.primaryStage = primaryStage;
 	}
@@ -153,8 +178,50 @@ public class Controller {
 		progressDay.progressProperty().bind(workedTimeOfDay);
 		progressWeek.progressProperty().bind(workedTimeOfWeek);
 
+				dateColumn.setCellValueFactory(cellData -> getDateAsProperty(cellData
+				.getValue().getStartTime()));
+
+		startTimeColumn
+				.setCellValueFactory(cellData -> getTimeAsProperty(cellData
+						.getValue().getStartTime()));
+		endTimeColumn.setCellValueFactory(cellData -> {
+			return Optional.ofNullable(cellData.getValue().getEndTime())
+					.map(endTime -> getTimeAsProperty(endTime))
+					.orElse(new SimpleStringProperty(""));
+		});
+
+		durationColumn.setCellValueFactory(cellData -> {
+			String formattedWorkTime = Optional
+					.ofNullable(cellData.getValue().getEndTime())
+					.map(endTime -> getFormattedWorkTime(Duration.between(
+							cellData.getValue().getStartTime(), endTime)))
+					.orElse("");
+			return new SimpleStringProperty(formattedWorkTime);
+		});
+
+		update();
+	}
+
+	private SimpleStringProperty getTimeAsProperty(Instant instant) {
+		LocalDateTime localDateTime = LocalDateTime.ofInstant(instant,
+				ZoneId.systemDefault());
+		String formattedDateTime = timeFormatter.format(localDateTime);
+		return new SimpleStringProperty(formattedDateTime);
+	}
+
+	private SimpleStringProperty getDateAsProperty(Instant instant) {
+		LocalDateTime localDateTime = LocalDateTime.ofInstant(instant,
+				ZoneId.systemDefault());
+		String formattedDateTime = dateFormatter.format(localDateTime);
+		return new SimpleStringProperty(formattedDateTime);
+	}
+
+	private void update() {
 		updateWorkTimeOfDay();
 		updateWorkTimeOfWeek();
+		
+		workLogTable.getItems().clear();
+		workLogTable.getItems().addAll(log.getWorkLogEntries());
 	}
 
 	private void updateWorkTimeOfWeek() {
@@ -162,6 +229,7 @@ public class Controller {
 		workedTimeInWeek = Duration.ZERO;
 		log.getWorkLogEntriesForWeek()
 				.stream()
+				.filter(log -> log.getEndTime() != null)
 				.forEach(
 						l -> {
 							workedTimeInWeek = workedTimeInWeek.plus(Duration
@@ -175,15 +243,19 @@ public class Controller {
 
 	private void updateWorkTimeOfDay() {
 		// DRY
-		log.getWorkLogEntryForToday().ifPresent(
-				logEntry -> {
-					workedTime = Duration.between(logEntry.getStartTime(),
-							logEntry.getEndTime());
+		log.getWorkLogEntryForToday()
+				.filter(log -> log.getEndTime() != null)
+				.ifPresent(
+						logEntry -> {
+							workedTime = Duration.between(
+									logEntry.getStartTime(),
+									logEntry.getEndTime());
 
-					workedTimeOfDay.set(Double.valueOf(workedTime.toMinutes())
-							/ Duration.ofHours(8).toMinutes());
-					workedTimeDay.set(getFormattedWorkTime(workedTime));
-				});
+							workedTimeOfDay.set(Double.valueOf(workedTime
+									.toMinutes())
+									/ Duration.ofHours(8).toMinutes());
+							workedTimeDay.set(getFormattedWorkTime(workedTime));
+						});
 	}
 
 	private String getFormattedWorkTime(Duration workedTime) {
@@ -199,6 +271,8 @@ public class Controller {
 
 		Instant startTime = Instant.now();
 		log.getWorkLogEntries().add(new WorkLogEntry(startTime));
+
+		update();
 	}
 
 	@FXML
@@ -208,6 +282,8 @@ public class Controller {
 
 		WorkLogEntry logEntry = getLogEntry();
 		logEntry.setEndTime(Instant.now());
+
+		update();
 	}
 
 	private WorkLogEntry getLogEntry() {
@@ -219,7 +295,6 @@ public class Controller {
 	public void onShutDown() {
 		executorService.shutdown();
 	}
-	
 
 	@FXML
 	public void save() {
@@ -248,8 +323,8 @@ public class Controller {
 	@FXML
 	public void newLog() {
 		log = new WorkingLog();
-		updateWorkTimeOfDay();
-		updateWorkTimeOfWeek();
+
+		update();
 	}
 
 	@FXML
@@ -270,8 +345,8 @@ public class Controller {
 					System.out.println("open");
 
 					log = new JsonSerializer().read(file);
-					updateWorkTimeOfDay();
-					updateWorkTimeOfWeek();
+
+					update();
 				});
 	}
 
