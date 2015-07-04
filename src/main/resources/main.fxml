@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.input.*?>
 <?import javafx.scene.*?>
 <?import javafx.scene.shape.*?>
 <?import javafx.scene.effect.*?>
@@ -15,14 +16,20 @@
   <children>
     <MenuBar VBox.vgrow="NEVER">
       <menus>
-        <Menu mnemonicParsing="false" text="File">
+        <Menu mnemonicParsing="false" text="Datei">
           <items>
             <MenuItem mnemonicParsing="false" text="New" />
-            <MenuItem mnemonicParsing="false" text="Open…" />
+            <MenuItem mnemonicParsing="false" onAction="#openLog" text="Öffnen...">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="O" control="ANY" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator></MenuItem>
             <Menu mnemonicParsing="false" text="Open Recent" />
             <SeparatorMenuItem mnemonicParsing="false" />
             <MenuItem mnemonicParsing="false" text="Close" />
-            <MenuItem mnemonicParsing="false" text="Save" />
+            <MenuItem mnemonicParsing="false" onAction="#saveLog" text="Speichern">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="S" control="ANY" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator></MenuItem>
             <MenuItem mnemonicParsing="false" text="Save As…" />
             <MenuItem mnemonicParsing="false" text="Revert" />
             <SeparatorMenuItem mnemonicParsing="false" />
@@ -85,9 +92,10 @@
                               </VBox>
                               <HBox spacing="5.0">
                                  <children>
-                                    <Button mnemonicParsing="false" onAction="#start" text="Start" />
-                                    <Button mnemonicParsing="false" onAction="#stop" text="Ende" />
-                                    <Button mnemonicParsing="false">
+                                    <ToggleButton mnemonicParsing="false" onAction="#start">
+                                       <toggleGroup>
+                                          <ToggleGroup fx:id="timeControls" />
+                                       </toggleGroup>
                                        <graphic>
                                           <Group>
                                              <children>
@@ -118,7 +126,28 @@
                                              </children>
                                           </Group>
                                        </graphic>
-                                    </Button>
+                                    </ToggleButton>
+                                    <ToggleButton mnemonicParsing="false" onAction="#stop" selected="true" toggleGroup="$timeControls">
+                                       <graphic>
+                                          <Group>
+                                             <children>
+                                                <Rectangle arcHeight="5.0" arcWidth="5.0" height="30.0" stroke="BLACK" strokeType="INSIDE" width="30.0">
+                                                   <effect>
+                                                      <DropShadow />
+                                                   </effect>
+                                                   <fill>
+                                                      <LinearGradient endX="1.0" endY="1.0">
+                                                         <stops>
+                                                            <Stop color="#b93f1a" />
+                                                            <Stop color="WHITE" offset="1.0" />
+                                                         </stops>
+                                                      </LinearGradient>
+                                                   </fill>
+                                                </Rectangle>
+                                             </children>
+                                          </Group>
+                                       </graphic>
+                                    </ToggleButton>
                                     <Button mnemonicParsing="false">
                                        <graphic>
                                           <Group>
@@ -148,27 +177,6 @@
                                                    <effect>
                                                       <DropShadow />
                                                    </effect>
-                                                </Rectangle>
-                                             </children>
-                                          </Group>
-                                       </graphic>
-                                    </Button>
-                                    <Button mnemonicParsing="false">
-                                       <graphic>
-                                          <Group>
-                                             <children>
-                                                <Rectangle arcHeight="5.0" arcWidth="5.0" height="30.0" stroke="BLACK" strokeType="INSIDE" width="30.0">
-                                                   <effect>
-                                                      <DropShadow />
-                                                   </effect>
-                                                   <fill>
-                                                      <LinearGradient endX="1.0" endY="1.0">
-                                                         <stops>
-                                                            <Stop color="#b93f1a" />
-                                                            <Stop color="WHITE" offset="1.0" />
-                                                         </stops>
-                                                      </LinearGradient>
-                                                   </fill>
                                                 </Rectangle>
                                              </children>
                                           </Group>

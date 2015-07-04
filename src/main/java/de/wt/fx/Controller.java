@@ -1,5 +1,6 @@
 package de.wt.fx;
 
+import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalTime;
@@ -14,6 +15,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import de.wt.io.JsonSerializer;
 import de.wt.model.Example;
 import de.wt.model.WorkLogEntry;
 import de.wt.model.WorkingLog;
@@ -27,6 +29,9 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.stage.FileChooser;
+import javafx.stage.FileChooser.ExtensionFilter;
+import javafx.stage.Stage;
 
 public class Controller {
 
@@ -72,11 +77,21 @@ public class Controller {
 			.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.GERMAN)
 			.withZone(ZoneId.systemDefault());
 
-	private WorkingLog log = new Example().create();
+	private WorkingLog log = loadInitialWoringLog();
+
+	private WorkingLog loadInitialWoringLog() {
+		return new WorkingLog();
+		// return new Example().create();
+	}
+
+	private final Stage primaryStage;
+
+	public Controller(Stage primaryStage) {
+		this.primaryStage = primaryStage;
+	}
 
 	@FXML
 	private void initialize() {
-
 		executorService.scheduleAtFixedRate(new Runnable() {
 
 			public void run() {
@@ -138,16 +153,11 @@ public class Controller {
 		progressDay.progressProperty().bind(workedTimeOfDay);
 		progressWeek.progressProperty().bind(workedTimeOfWeek);
 
-		// DRY
-		log.getWorkLogEntryForToday().ifPresent(
-				logEntry -> {
-					workedTime = Duration.between(logEntry.getStartTime(),
-							logEntry.getEndTime());
+		updateWorkTimeOfDay();
+		updateWorkTimeOfWeek();
+	}
 
-					workedTimeOfDay.set(Double.valueOf(workedTime.toMinutes())
-							/ Duration.ofHours(8).toMinutes());
-					workedTimeDay.set(getFormattedWorkTime(workedTime));
-				});
+	private void updateWorkTimeOfWeek() {
 		// DRY
 		workedTimeInWeek = Duration.ZERO;
 		log.getWorkLogEntriesForWeek()
@@ -161,7 +171,19 @@ public class Controller {
 		workedTimeOfWeek.set(Double.valueOf(workedTimeInWeek.toMinutes())
 				/ Duration.ofHours(40).toMinutes());
 		workedTimeWeek.set(getFormattedWorkTime(workedTimeInWeek));
+	}
 
+	private void updateWorkTimeOfDay() {
+		// DRY
+		log.getWorkLogEntryForToday().ifPresent(
+				logEntry -> {
+					workedTime = Duration.between(logEntry.getStartTime(),
+							logEntry.getEndTime());
+
+					workedTimeOfDay.set(Double.valueOf(workedTime.toMinutes())
+							/ Duration.ofHours(8).toMinutes());
+					workedTimeDay.set(getFormattedWorkTime(workedTime));
+				});
 	}
 
 	private String getFormattedWorkTime(Duration workedTime) {
@@ -196,5 +218,35 @@ public class Controller {
 
 	public void onShutDown() {
 		executorService.shutdown();
+	}
+
+	@FXML
+	public void saveLog() {
+		System.out.println("save");
+
+		File file = new File(getDefaultDirectory(), "workingLog.json");
+		new JsonSerializer().write(log, file);
+	}
+
+	@FXML
+	public void openLog() {
+		FileChooser fileChooser = new FileChooser();
+		fileChooser.setTitle("Öffne Working Log");
+		fileChooser.getExtensionFilters().add(
+				new ExtensionFilter("JSON", "*.json"));
+		fileChooser.setInitialDirectory(getDefaultDirectory());
+
+		Optional.ofNullable(fileChooser.showOpenDialog(primaryStage))
+				.ifPresent(file -> {
+					System.out.println("open");
+
+					log = new JsonSerializer().read(file);
+					updateWorkTimeOfDay();
+					updateWorkTimeOfWeek();
+				});
+	}
+
+	private File getDefaultDirectory() {
+		return new File(System.getProperty("user.home"));
 	}
 }

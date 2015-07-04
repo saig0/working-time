@@ -13,6 +13,8 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class WorkingLog {
 
 	private List<WorkLogEntry> workLogEntries = new ArrayList<WorkLogEntry>();
@@ -25,6 +27,7 @@ public class WorkingLog {
 		this.workLogEntries = workLogEntries;
 	}
 
+	@JsonIgnore
 	public Optional<WorkLogEntry> getWorkLogEntryForToday() {
 		return workLogEntries
 				.stream()
@@ -33,6 +36,7 @@ public class WorkingLog {
 						.now().getDayOfYear()).findAny();
 	}
 
+	@JsonIgnore
 	public List<WorkLogEntry> getWorkLogEntriesForWeek() {
 		List<WorkLogEntry> list = workLogEntries
 				.stream()
