@@ -85,7 +85,7 @@ public class Controller {
 	}
 
 	private final Stage primaryStage;
-
+	
 	public Controller(Stage primaryStage) {
 		this.primaryStage = primaryStage;
 	}
@@ -219,9 +219,10 @@ public class Controller {
 	public void onShutDown() {
 		executorService.shutdown();
 	}
+	
 
 	@FXML
-	public void saveLog() {
+	public void save() {
 		System.out.println("save");
 
 		File file = new File(getDefaultDirectory(), "workingLog.json");
@@ -229,9 +230,37 @@ public class Controller {
 	}
 
 	@FXML
-	public void openLog() {
+	public void saveAs() {
 		FileChooser fileChooser = new FileChooser();
-		fileChooser.setTitle("Öffne Working Log");
+		fileChooser.setTitle("Working Log speichern");
+		fileChooser.getExtensionFilters().add(
+				new ExtensionFilter("JSON", "*.json"));
+		fileChooser.setInitialDirectory(getDefaultDirectory());
+
+		Optional.ofNullable(fileChooser.showSaveDialog(primaryStage))
+				.ifPresent(file -> {
+					System.out.println("save");
+
+					new JsonSerializer().write(log, file);
+				});
+	}
+
+	@FXML
+	public void newLog() {
+		log = new WorkingLog();
+		updateWorkTimeOfDay();
+		updateWorkTimeOfWeek();
+	}
+
+	@FXML
+	public void close() {
+		Platform.exit();
+	}
+
+	@FXML
+	public void open() {
+		FileChooser fileChooser = new FileChooser();
+		fileChooser.setTitle("Working Log öffnen");
 		fileChooser.getExtensionFilters().add(
 				new ExtensionFilter("JSON", "*.json"));
 		fileChooser.setInitialDirectory(getDefaultDirectory());

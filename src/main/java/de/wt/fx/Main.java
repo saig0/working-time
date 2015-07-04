@@ -10,25 +10,24 @@ import javafx.stage.WindowEvent;
 
 public class Main extends Application {
 
+	private Controller controller;
+
 	public static void main(String[] args) {
 		launch(args);
 	}
 
 	@Override
+	public void stop() throws Exception {
+		controller.onShutDown();
+	}
+	
+	@Override
 	public void start(Stage primaryStage) throws Exception {
 		FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource(
 				"/main.fxml"));
-		Controller controller = new Controller(primaryStage);
+		controller = new Controller(primaryStage);
 		fxmlLoader.setController(controller);
 		Parent root = fxmlLoader.load();
-
-		primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-			
-			@Override
-			public void handle(WindowEvent event) {
-				controller.onShutDown();
-			}
-		});
 		
 		Scene scene = new Scene(root);
 
