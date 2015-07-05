@@ -74,7 +74,7 @@
                                     <Insets left="75.0" />
                                  </padding>
                               </VBox>
-                              <HBox spacing="5.0">
+                              <HBox spacing="10.0">
                                  <children>
                                     <ToggleButton mnemonicParsing="false" onAction="#start">
                                        <toggleGroup>
@@ -132,41 +132,10 @@
                                           </Group>
                                        </graphic>
                                     </ToggleButton>
-                                    <Button mnemonicParsing="false">
-                                       <graphic>
-                                          <Group>
-                                             <children>
-                                                <Rectangle arcHeight="5.0" arcWidth="5.0" height="30.0" layoutX="350.0" layoutY="209.0" stroke="BLACK" strokeType="INSIDE" width="13.0">
-                                                   <fill>
-                                                      <LinearGradient endX="1.0" endY="1.0">
-                                                         <stops>
-                                                            <Stop color="#e1ad3d" />
-                                                            <Stop color="WHITE" offset="1.0" />
-                                                         </stops>
-                                                      </LinearGradient>
-                                                   </fill>
-                                                   <effect>
-                                                      <DropShadow />
-                                                   </effect>
-                                                </Rectangle>
-                                                <Rectangle arcHeight="5.0" arcWidth="5.0" height="30.0" layoutX="365.0" layoutY="209.0" stroke="BLACK" strokeType="INSIDE" width="13.0">
-                                                   <fill>
-                                                      <LinearGradient endX="1.0" endY="1.0">
-                                                         <stops>
-                                                            <Stop color="#e1ad3d" />
-                                                            <Stop color="WHITE" offset="1.0" />
-                                                         </stops>
-                                                      </LinearGradient>
-                                                   </fill>
-                                                   <effect>
-                                                      <DropShadow />
-                                                   </effect>
-                                                </Rectangle>
-                                             </children>
-                                          </Group>
-                                       </graphic>
-                                    </Button>
                                  </children>
+                                 <padding>
+                                    <Insets left="65.0" />
+                                 </padding>
                               </HBox>
                               <TitledPane animated="false" collapsible="false" text="Arbeitstag">
                                  <content>

@@ -130,12 +130,25 @@ public class Controller {
 						currentDate.set(dateFormatter.format(now));
 
 						if (running) {
-							Instant startTime = getLogEntry().getStartTime();
+							WorkLogEntry logEntry = getLogEntry();
+							if (logEntry.getEndTime() != null) {
+								throw new IllegalStateException();
+							}
+							Instant startTime = logEntry.getStartTime();
 
 							Duration duration = Duration
 									.between(startTime, now);
-
 							workedTime = duration;
+
+							log.getWorkLogEntriesForToday()
+									.stream()
+									.filter(log -> log.getEndTime() != null)
+									.forEach(
+											l -> {
+												workedTime = workedTime.plus(Duration.between(
+														l.getStartTime(),
+														l.getEndTime()));
+											});
 
 							workedTimeOfDay.set(Double.valueOf(workedTime
 									.toMinutes())
@@ -178,7 +191,7 @@ public class Controller {
 		progressDay.progressProperty().bind(workedTimeOfDay);
 		progressWeek.progressProperty().bind(workedTimeOfWeek);
 
-				dateColumn.setCellValueFactory(cellData -> getDateAsProperty(cellData
+		dateColumn.setCellValueFactory(cellData -> getDateAsProperty(cellData
 				.getValue().getStartTime()));
 
 		startTimeColumn
@@ -198,6 +211,14 @@ public class Controller {
 					.orElse("");
 			return new SimpleStringProperty(formattedWorkTime);
 		});
+
+		log.getLastWorkLogEntryForToday()
+				.filter(logEntry -> logEntry.getEndTime() == null)
+				.ifPresent(logEntry -> {
+					running = true;
+					
+					System.out.println("running");
+				});
 
 		update();
 	}
@@ -219,7 +240,7 @@ public class Controller {
 	private void update() {
 		updateWorkTimeOfDay();
 		updateWorkTimeOfWeek();
-		
+
 		workLogTable.getItems().clear();
 		workLogTable.getItems().addAll(log.getWorkLogEntries());
 	}
@@ -243,19 +264,22 @@ public class Controller {
 
 	private void updateWorkTimeOfDay() {
 		// DRY
-		log.getWorkLogEntryForToday()
-				.filter(log -> log.getEndTime() != null)
-				.ifPresent(
-						logEntry -> {
-							workedTime = Duration.between(
-									logEntry.getStartTime(),
-									logEntry.getEndTime());
 
-							workedTimeOfDay.set(Double.valueOf(workedTime
-									.toMinutes())
-									/ Duration.ofHours(8).toMinutes());
-							workedTimeDay.set(getFormattedWorkTime(workedTime));
+		workedTime = Duration.ZERO;
+
+		log.getWorkLogEntriesForToday()
+				.stream()
+				.filter(log -> log.getEndTime() != null)
+				.forEach(
+						logEntry -> {
+							workedTime = workedTime.plus(Duration.between(
+									logEntry.getStartTime(),
+									logEntry.getEndTime()));
 						});
+
+		workedTimeOfDay.set(Double.valueOf(workedTime.toMinutes())
+				/ Duration.ofHours(8).toMinutes());
+		workedTimeDay.set(getFormattedWorkTime(workedTime));
 	}
 
 	private String getFormattedWorkTime(Duration workedTime) {
@@ -267,27 +291,35 @@ public class Controller {
 	public void start(ActionEvent event) {
 		System.out.println("start");
 
-		running = true;
+		if (!running) {
+			running = true;
 
-		Instant startTime = Instant.now();
-		log.getWorkLogEntries().add(new WorkLogEntry(startTime));
+			Instant startTime = Instant.now();
+			log.getWorkLogEntries().add(new WorkLogEntry(startTime));
 
-		update();
+			update();
+		}
 	}
 
 	@FXML
 	public void stop(ActionEvent event) {
 		System.out.println("stop");
-		running = false;
 
-		WorkLogEntry logEntry = getLogEntry();
-		logEntry.setEndTime(Instant.now());
+		if (running) {
+			running = false;
 
-		update();
+			WorkLogEntry logEntry = getLogEntry();
+			if (logEntry.getEndTime() != null) {
+				throw new IllegalStateException();
+			}
+			logEntry.setEndTime(Instant.now());
+
+			update();
+		}
 	}
 
 	private WorkLogEntry getLogEntry() {
-		WorkLogEntry logEntry = log.getWorkLogEntryForToday().orElseThrow(
+		WorkLogEntry logEntry = log.getLastWorkLogEntryForToday().orElseThrow(
 				() -> new IllegalStateException());
 		return logEntry;
 	}
@@ -347,6 +379,14 @@ public class Controller {
 					log = new JsonSerializer().read(file);
 
 					update();
+					
+					log.getLastWorkLogEntryForToday()
+					.filter(logEntry -> logEntry.getEndTime() == null)
+					.ifPresent(logEntry -> {
+						running = true;
+						
+						System.out.println("running");
+					});
 				});
 	}
 
