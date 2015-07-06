@@ -22,6 +22,9 @@ import de.wt.model.Configuration;
 import de.wt.model.Example;
 import de.wt.model.WorkLogEntry;
 import de.wt.model.WorkingLog;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
@@ -41,8 +44,10 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
@@ -85,9 +90,15 @@ public class Controller {
 
 	@FXML
 	private Menu recentlyOpenedFileMenu;
-	
+
 	@FXML
 	private CheckMenuItem automaticSaveField;
+
+	@FXML
+	private ToggleButton startButton;
+
+	@FXML
+	private ToggleButton stopButton;
 
 	private Duration workedTime = Duration.ZERO;
 	private Duration workedTimeInWeek = Duration.ZERO;
@@ -100,10 +111,10 @@ public class Controller {
 
 	private StringProperty workedTimeDay = new SimpleStringProperty("00:00");
 	private StringProperty workedTimeWeek = new SimpleStringProperty("00:00");
-	
+
 	private BooleanProperty automaticSaveProperty;
 
-	private boolean running = false;
+	private BooleanProperty running = new SimpleBooleanProperty(false);
 
 	private final ScheduledExecutorService executorService = Executors
 			.newSingleThreadScheduledExecutor();
@@ -163,7 +174,7 @@ public class Controller {
 						currentTime.set(timeFormatter.format(now));
 						currentDate.set(dateFormatter.format(now));
 
-						if (running) {
+						if (running.get()) {
 							WorkLogEntry logEntry = getLogEntry();
 							if (logEntry.getEndTime() != null) {
 								throw new IllegalStateException();
@@ -246,21 +257,8 @@ public class Controller {
 			return new SimpleStringProperty(formattedWorkTime);
 		});
 
-		log.getLastWorkLogEntryForToday()
-				.filter(logEntry -> logEntry.getEndTime() == null)
-				.ifPresent(logEntry -> {
-					running = true;
-
-					System.out.println("running");
-				});
-
-		config.getRecentlyOpenedLogFiles().forEach(
-				file -> recentlyOpenedFileMenu.getItems().add(
-						createMenuItemForRecentlyOpenedFile(file)));
-
-		update();
-		
-		automaticSaveProperty = new SimpleBooleanProperty(config.isAutomaticSave());
+		automaticSaveProperty = new SimpleBooleanProperty(
+				config.isAutomaticSave());
 		automaticSaveProperty.addListener(new ChangeListener<Boolean>() {
 
 			@Override
@@ -270,7 +268,40 @@ public class Controller {
 				onChangedConfig();
 			}
 		});
-		automaticSaveField.selectedProperty().bindBidirectional(automaticSaveProperty);
+		automaticSaveField.selectedProperty().bindBidirectional(
+				automaticSaveProperty);
+
+		running.addListener(new ChangeListener<Boolean>() {
+
+			@Override
+			public void changed(ObservableValue<? extends Boolean> observable,
+					Boolean oldValue, Boolean newValue) {
+				startButton.setSelected(newValue);
+				stopButton.setSelected(!newValue);
+
+				if (newValue) {
+					progressDay.getStyleClass().add("active");
+					progressWeek.getStyleClass().add("active");
+				} else {
+					progressDay.getStyleClass().remove("active");
+					progressWeek.getStyleClass().remove("active");
+				}
+			}
+		});
+
+		log.getLastWorkLogEntryForToday()
+				.filter(logEntry -> logEntry.getEndTime() == null)
+				.ifPresent(logEntry -> {
+					running.set(true);
+
+					System.out.println("running");
+				});
+
+		config.getRecentlyOpenedLogFiles().forEach(
+				file -> recentlyOpenedFileMenu.getItems().add(
+						createMenuItemForRecentlyOpenedFile(file)));
+
+		update();
 	}
 
 	private MenuItem createMenuItemForRecentlyOpenedFile(File file) {
@@ -351,26 +382,26 @@ public class Controller {
 
 	@FXML
 	public void start(ActionEvent event) {
-		System.out.println("start");
+		if (!running.get()) {
+			System.out.println("start");
 
-		if (!running) {
-			running = true;
+			running.set(true);
 
 			Instant startTime = Instant.now();
 			log.getWorkLogEntries().add(new WorkLogEntry(startTime));
 
 			update();
-			
+
 			onChangedWorkingLog();
 		}
 	}
 
 	@FXML
 	public void stop(ActionEvent event) {
-		System.out.println("stop");
+		if (running.get()) {
+			System.out.println("stop");
 
-		if (running) {
-			running = false;
+			running.set(false);
 
 			WorkLogEntry logEntry = getLogEntry();
 			if (logEntry.getEndTime() != null) {
@@ -379,13 +410,13 @@ public class Controller {
 			logEntry.setEndTime(Instant.now());
 
 			update();
-			
+
 			onChangedWorkingLog();
 		}
 	}
 
 	private void onChangedWorkingLog() {
-		if(config.isAutomaticSave()){
+		if (config.isAutomaticSave()) {
 			save();
 		}
 	}
@@ -431,11 +462,11 @@ public class Controller {
 	@FXML
 	public void newLog() {
 		log = new WorkingLog();
-		
-		running = false;
+
+		running.set(false);
 
 		update();
-		
+
 		config.setLastOpenedLogFile(null);
 		onChangedConfig();
 	}
@@ -468,7 +499,7 @@ public class Controller {
 		log.getLastWorkLogEntryForToday()
 				.filter(logEntry -> logEntry.getEndTime() == null)
 				.ifPresent(logEntry -> {
-					running = true;
+					running.set(true);
 
 					System.out.println("running");
 				});

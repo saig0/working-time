@@ -1,0 +1,9 @@
+.active > .bar {
+     -fx-background-color: chartreuse;
+     /*  #80ff00, greenyellow, limegreen */
+}
+
+.inactive > .bar {
+     -fx-background-color: cornflowerblue ;
+     /*  #80ff00, greenyellow, limegreen */
+}

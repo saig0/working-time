@@ -20,7 +20,7 @@ public class Main extends Application {
 	public void stop() throws Exception {
 		controller.onShutDown();
 	}
-	
+
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource(
@@ -28,9 +28,11 @@ public class Main extends Application {
 		controller = new Controller(primaryStage);
 		fxmlLoader.setController(controller);
 		Parent root = fxmlLoader.load();
-		
-		Scene scene = new Scene(root);
 
+		Scene scene = new Scene(root);
+		scene.getStylesheets().add(
+				getClass().getResource("/default.css").toExternalForm());
+		
 		primaryStage.setTitle("Working Time");
 		primaryStage.setScene(scene);
 		primaryStage.centerOnScreen();
