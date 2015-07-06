@@ -1,6 +1,7 @@
 package de.wt.fx;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import de.wt.io.JsonSerializer;
+import de.wt.model.Configuration;
 import de.wt.model.Example;
 import de.wt.model.WorkLogEntry;
 import de.wt.model.WorkingLog;
@@ -102,11 +104,24 @@ public class Controller {
 			.ofLocalizedDateTime(FormatStyle.MEDIUM).withLocale(Locale.GERMAN)
 			.withZone(ZoneId.systemDefault());
 
-	private WorkingLog log = loadInitialWoringLog();
+	private WorkingLog log;
 
-	private WorkingLog loadInitialWoringLog() {
-		return new WorkingLog();
+	private Configuration config;
+
+	private WorkingLog loadInitialWorkingLog() {
+		if (config.getLastOpenedLogFile().exists()) {
+			return new JsonSerializer().readLogFile(
+					config.getLastOpenedLogFile()).orElseThrow(
+					() -> new RuntimeException());
+		} else {
+			return new WorkingLog();
+		}
+		// return new WorkingLog();
 		// return new Example().create();
+	}
+
+	private Configuration loadConfig() {
+		return new JsonSerializer().readConfig().orElse(new Configuration());
 	}
 
 	private final Stage primaryStage;
@@ -117,6 +132,9 @@ public class Controller {
 
 	@FXML
 	private void initialize() {
+		config = loadConfig();
+		log = loadInitialWorkingLog();
+
 		executorService.scheduleAtFixedRate(new Runnable() {
 
 			public void run() {
@@ -216,7 +234,7 @@ public class Controller {
 				.filter(logEntry -> logEntry.getEndTime() == null)
 				.ifPresent(logEntry -> {
 					running = true;
-					
+
 					System.out.println("running");
 				});
 
@@ -332,8 +350,12 @@ public class Controller {
 	public void save() {
 		System.out.println("save");
 
-		File file = new File(getDefaultDirectory(), "workingLog.json");
-		new JsonSerializer().write(log, file);
+		if (config.getLastOpenedLogFile().exists()) {
+			new JsonSerializer().writeLogFile(log,
+					config.getLastOpenedLogFile());
+		} else {
+			saveAs();
+		}
 	}
 
 	@FXML
@@ -342,13 +364,13 @@ public class Controller {
 		fileChooser.setTitle("Working Log speichern");
 		fileChooser.getExtensionFilters().add(
 				new ExtensionFilter("JSON", "*.json"));
-		fileChooser.setInitialDirectory(getDefaultDirectory());
+		fileChooser.setInitialDirectory(config.getDefaultLogFileLocation());
 
 		Optional.ofNullable(fileChooser.showSaveDialog(primaryStage))
 				.ifPresent(file -> {
 					System.out.println("save");
 
-					new JsonSerializer().write(log, file);
+					new JsonSerializer().writeLogFile(log, file);
 				});
 	}
 
@@ -370,27 +392,29 @@ public class Controller {
 		fileChooser.setTitle("Working Log öffnen");
 		fileChooser.getExtensionFilters().add(
 				new ExtensionFilter("JSON", "*.json"));
-		fileChooser.setInitialDirectory(getDefaultDirectory());
+		fileChooser.setInitialDirectory(config.getDefaultLogFileLocation());
 
 		Optional.ofNullable(fileChooser.showOpenDialog(primaryStage))
-				.ifPresent(file -> {
-					System.out.println("open");
+				.ifPresent(
+						file -> {
+							System.out.println("open");
 
-					log = new JsonSerializer().read(file);
+							log = new JsonSerializer().readLogFile(file)
+									.orElseThrow(() -> new RuntimeException());
 
-					update();
-					
-					log.getLastWorkLogEntryForToday()
-					.filter(logEntry -> logEntry.getEndTime() == null)
-					.ifPresent(logEntry -> {
-						running = true;
-						
-						System.out.println("running");
-					});
-				});
+							update();
+
+							log.getLastWorkLogEntryForToday()
+									.filter(logEntry -> logEntry.getEndTime() == null)
+									.ifPresent(logEntry -> {
+										running = true;
+
+										System.out.println("running");
+									});
+							
+							config.setLastOpenedLogFile(file);
+							new JsonSerializer().writeConfig(config);
+						});
 	}
 
-	private File getDefaultDirectory() {
-		return new File(System.getProperty("user.home"));
-	}
 }
