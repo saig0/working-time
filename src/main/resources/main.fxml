@@ -19,11 +19,12 @@
         <Menu mnemonicParsing="false" text="Datei">
           <items>
             <MenuItem mnemonicParsing="false" onAction="#newLog" text="Neu" />
+            <SeparatorMenuItem mnemonicParsing="false" />
             <MenuItem mnemonicParsing="false" onAction="#open" text="Öffnen...">
                      <accelerator>
                         <KeyCodeCombination alt="UP" code="O" control="ANY" meta="UP" shift="UP" shortcut="UP" />
                      </accelerator></MenuItem>
-            <Menu mnemonicParsing="false" text="Open Recent" />
+            <Menu fx:id="recentlyOpenedFileMenu" mnemonicParsing="false" text="Zuletzt geöffnet" />
             <SeparatorMenuItem mnemonicParsing="false" />
             <MenuItem mnemonicParsing="false" onAction="#save" text="Speichern">
                      <accelerator>
@@ -31,11 +32,14 @@
                      </accelerator></MenuItem>
             <MenuItem mnemonicParsing="false" onAction="#saveAs" text="Speichern unter..." />
             <SeparatorMenuItem mnemonicParsing="false" />
-            <MenuItem mnemonicParsing="false" text="Preferences…" />
-            <SeparatorMenuItem mnemonicParsing="false" />
             <MenuItem mnemonicParsing="false" onAction="#close" text="Beenden" />
           </items>
         </Menu>
+            <Menu mnemonicParsing="false" text="Optionen">
+              <items>
+                  <CheckMenuItem fx:id="automaticSaveField" mnemonicParsing="false" text="Automatisch speichern" />
+              </items>
+            </Menu>
         <Menu mnemonicParsing="false" text="Help">
           <items>
             <MenuItem mnemonicParsing="false" text="About MyHelloApp" />
@@ -76,7 +80,7 @@
                               </VBox>
                               <HBox spacing="10.0">
                                  <children>
-                                    <ToggleButton mnemonicParsing="false" onAction="#start">
+                                    <ToggleButton fx:id="startButton" mnemonicParsing="false" onAction="#start">
                                        <toggleGroup>
                                           <ToggleGroup fx:id="timeControls" />
                                        </toggleGroup>
@@ -111,7 +115,7 @@
                                           </Group>
                                        </graphic>
                                     </ToggleButton>
-                                    <ToggleButton mnemonicParsing="false" onAction="#stop" selected="true" toggleGroup="$timeControls">
+                                    <ToggleButton fx:id="stopButton" mnemonicParsing="false" onAction="#stop" selected="true" toggleGroup="$timeControls">
                                        <graphic>
                                           <Group>
                                              <children>

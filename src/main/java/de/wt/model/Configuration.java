@@ -14,7 +14,7 @@ public class Configuration {
 
 	private List<File> recentlyOpenedLogFiles = new ArrayList<File>();
 
-	private boolean automaticSave = true;
+	private boolean automaticSave = false;
 	
 	public File getLastOpenedLogFile() {
 		return Optional.ofNullable(lastOpenedLogFile).orElse(
@@ -47,7 +47,9 @@ public class Configuration {
 
 	public void setLastOpenedLogFile(File lastOpenedLogFile) {
 		this.lastOpenedLogFile = lastOpenedLogFile;
-		recentlyOpenedLogFiles.add(lastOpenedLogFile);
+		if(lastOpenedLogFile != null && !recentlyOpenedLogFiles.contains(lastOpenedLogFile)){
+			recentlyOpenedLogFiles.add(lastOpenedLogFile);
+		}
 	}
 	
 }

@@ -24,13 +24,21 @@ import de.wt.model.WorkLogEntry;
 import de.wt.model.WorkingLog;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
@@ -75,6 +83,12 @@ public class Controller {
 	@FXML
 	private TableColumn<WorkLogEntry, String> dateColumn;
 
+	@FXML
+	private Menu recentlyOpenedFileMenu;
+	
+	@FXML
+	private CheckMenuItem automaticSaveField;
+
 	private Duration workedTime = Duration.ZERO;
 	private Duration workedTimeInWeek = Duration.ZERO;
 
@@ -86,6 +100,8 @@ public class Controller {
 
 	private StringProperty workedTimeDay = new SimpleStringProperty("00:00");
 	private StringProperty workedTimeWeek = new SimpleStringProperty("00:00");
+	
+	private BooleanProperty automaticSaveProperty;
 
 	private boolean running = false;
 
@@ -238,7 +254,35 @@ public class Controller {
 					System.out.println("running");
 				});
 
+		config.getRecentlyOpenedLogFiles().forEach(
+				file -> recentlyOpenedFileMenu.getItems().add(
+						createMenuItemForRecentlyOpenedFile(file)));
+
 		update();
+		
+		automaticSaveProperty = new SimpleBooleanProperty(config.isAutomaticSave());
+		automaticSaveProperty.addListener(new ChangeListener<Boolean>() {
+
+			@Override
+			public void changed(ObservableValue<? extends Boolean> observable,
+					Boolean oldValue, Boolean newValue) {
+				config.setAutomaticSave(newValue);
+				onChangedConfig();
+			}
+		});
+		automaticSaveField.selectedProperty().bindBidirectional(automaticSaveProperty);
+	}
+
+	private MenuItem createMenuItemForRecentlyOpenedFile(File file) {
+		MenuItem menuItem = new MenuItem(file.toString());
+		menuItem.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent arg0) {
+				openLogFile(file);
+			}
+		});
+		return menuItem;
 	}
 
 	private SimpleStringProperty getTimeAsProperty(Instant instant) {
@@ -316,6 +360,8 @@ public class Controller {
 			log.getWorkLogEntries().add(new WorkLogEntry(startTime));
 
 			update();
+			
+			onChangedWorkingLog();
 		}
 	}
 
@@ -333,6 +379,14 @@ public class Controller {
 			logEntry.setEndTime(Instant.now());
 
 			update();
+			
+			onChangedWorkingLog();
+		}
+	}
+
+	private void onChangedWorkingLog() {
+		if(config.isAutomaticSave()){
+			save();
 		}
 	}
 
@@ -377,8 +431,13 @@ public class Controller {
 	@FXML
 	public void newLog() {
 		log = new WorkingLog();
+		
+		running = false;
 
 		update();
+		
+		config.setLastOpenedLogFile(null);
+		onChangedConfig();
 	}
 
 	@FXML
@@ -395,26 +454,31 @@ public class Controller {
 		fileChooser.setInitialDirectory(config.getDefaultLogFileLocation());
 
 		Optional.ofNullable(fileChooser.showOpenDialog(primaryStage))
-				.ifPresent(
-						file -> {
-							System.out.println("open");
+				.ifPresent(this::openLogFile);
+	}
 
-							log = new JsonSerializer().readLogFile(file)
-									.orElseThrow(() -> new RuntimeException());
+	private void openLogFile(File file) {
+		System.out.println("open");
 
-							update();
+		log = new JsonSerializer().readLogFile(file).orElseThrow(
+				() -> new RuntimeException());
 
-							log.getLastWorkLogEntryForToday()
-									.filter(logEntry -> logEntry.getEndTime() == null)
-									.ifPresent(logEntry -> {
-										running = true;
+		update();
 
-										System.out.println("running");
-									});
-							
-							config.setLastOpenedLogFile(file);
-							new JsonSerializer().writeConfig(config);
-						});
+		log.getLastWorkLogEntryForToday()
+				.filter(logEntry -> logEntry.getEndTime() == null)
+				.ifPresent(logEntry -> {
+					running = true;
+
+					System.out.println("running");
+				});
+
+		config.setLastOpenedLogFile(file);
+		onChangedConfig();
+	}
+
+	private void onChangedConfig() {
+		new JsonSerializer().writeConfig(config);
 	}
 
 }
