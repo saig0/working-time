@@ -1,5 +1,6 @@
 package de.wt.fx;
 
+import de.wt.view.Controller;
 import javafx.application.Application;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
@@ -9,6 +10,9 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
 public class Main extends Application {
+
+	private static final String MAIN_FXML_FILE = "/main.fxml";
+	private static final String CSS_FILE = "/default.css";
 
 	private Controller controller;
 
@@ -24,15 +28,15 @@ public class Main extends Application {
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource(
-				"/main.fxml"));
+				MAIN_FXML_FILE));
 		controller = new Controller(primaryStage);
 		fxmlLoader.setController(controller);
 		Parent root = fxmlLoader.load();
 
 		Scene scene = new Scene(root);
 		scene.getStylesheets().add(
-				getClass().getResource("/default.css").toExternalForm());
-		
+				getClass().getResource(CSS_FILE).toExternalForm());
+
 		primaryStage.setTitle("Working Time");
 		primaryStage.setScene(scene);
 		primaryStage.centerOnScreen();
