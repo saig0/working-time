@@ -11,6 +11,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -181,10 +182,22 @@ public class Controller {
 	}
 
 	private SimpleStringProperty getDateAsProperty(Instant instant) {
+		String formattedDateTime = getFormattedDate(instant);
+		return new SimpleStringProperty(formattedDateTime);
+	}
+
+	private String getFormattedDate(Instant instant) {
 		LocalDateTime localDateTime = LocalDateTime.ofInstant(instant,
 				ZoneId.systemDefault());
 		String formattedDateTime = dateFormatter.format(localDateTime);
-		return new SimpleStringProperty(formattedDateTime);
+		return formattedDateTime;
+	}
+
+	private String getFormattedTime(Instant instant) {
+		LocalDateTime localDateTime = LocalDateTime.ofInstant(instant,
+				ZoneId.systemDefault());
+		String formattedDateTime = timeFormatter.format(localDateTime);
+		return formattedDateTime;
 	}
 
 	private String getFormattedWorkTime(Duration workedTime) {
@@ -193,19 +206,33 @@ public class Controller {
 	}
 
 	private SimpleStringProperty getTimeAsProperty(Instant instant) {
-		LocalDateTime localDateTime = LocalDateTime.ofInstant(instant,
-				ZoneId.systemDefault());
-		String formattedDateTime = timeFormatter.format(localDateTime);
+		String formattedDateTime = getFormattedTime(instant);
 		return new SimpleStringProperty(formattedDateTime);
 	}
 
 	@FXML
 	private void initialize() {
-		timeField.textProperty().bind(viewModel.currentTimeProperty());
-		dateField.textProperty().bind(viewModel.currentDateProperty());
+		timeField.textProperty().bind(
+				Bindings.createStringBinding(() -> getFormattedTime(viewModel
+						.currentTimeProperty().get()), viewModel
+						.currentTimeProperty()));
 
-		dayField.textProperty().bind(viewModel.workedTimeDayProperty());
-		weekField.textProperty().bind(viewModel.workedTimeWeekProperty());
+		dateField.textProperty().bind(
+				Bindings.createObjectBinding(() -> getFormattedDate(viewModel
+						.currentDateProperty().get()), viewModel
+						.currentDateProperty()));
+
+		dayField.textProperty().bind(
+				Bindings.createStringBinding(
+						() -> getFormattedWorkTime(viewModel
+								.workedTimeDayProperty().get()), viewModel
+								.workedTimeDayProperty()));
+
+		weekField.textProperty().bind(
+				Bindings.createStringBinding(
+						() -> getFormattedWorkTime(viewModel
+								.workedTimeWeekProperty().get()), viewModel
+								.workedTimeWeekProperty()));
 
 		progressDay.progressProperty()
 				.bind(viewModel.workedTimeOfDayProperty());
