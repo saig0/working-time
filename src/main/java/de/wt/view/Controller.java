@@ -123,8 +123,6 @@ public class Controller {
 
 	@FXML
 	public void save() {
-		System.out.println("save");
-
 		if (viewModel.getLastOpenedLogFile().exists()) {
 			viewModel.saveLog(viewModel.getLastOpenedLogFile());
 		} else {
@@ -142,7 +140,6 @@ public class Controller {
 
 		Optional.ofNullable(fileChooser.showSaveDialog(primaryStage))
 				.ifPresent(file -> {
-					System.out.println("save");
 					viewModel.saveLog(file);
 				});
 	}
@@ -150,7 +147,6 @@ public class Controller {
 	@FXML
 	public void start(ActionEvent event) {
 		if (!viewModel.runningProperty().get()) {
-			System.out.println("start");
 
 			viewModel.start();
 
@@ -161,7 +157,6 @@ public class Controller {
 	@FXML
 	public void stop(ActionEvent event) {
 		if (viewModel.runningProperty().get()) {
-			System.out.println("stop");
 
 			viewModel.stop();
 
@@ -311,7 +306,6 @@ public class Controller {
 				});
 
 		viewModel.init();
-		viewModel.update();
 	}
 
 	private void onChangedWorkingLog() {
@@ -321,8 +315,6 @@ public class Controller {
 	}
 
 	private void openLogFile(File file) {
-		System.out.println("open");
-
 		viewModel.openLog(file);
 	}
 

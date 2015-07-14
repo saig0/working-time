@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
@@ -38,7 +39,7 @@ public class ViewModel {
 	private final ScheduledExecutorService executorService = Executors
 			.newSingleThreadScheduledExecutor();
 
-	private WorkingLog log;
+	private ObjectProperty<WorkingLog> log = new SimpleObjectProperty<WorkingLog>();
 
 	private final ObservableList<File> recentlyOpenedLogFilesProperty = FXCollections
 			.observableArrayList();
@@ -72,10 +73,9 @@ public class ViewModel {
 	}
 
 	public void createNewWorkingLog() {
-		log = new WorkingLog();
+		log.set(new WorkingLog());
 
 		runningProperty.set(false);
-		update();
 
 		config.setLastOpenedLogFile(null);
 		onChangedConfig();
@@ -128,54 +128,8 @@ public class ViewModel {
 						currentDateProperty.set(now);
 
 						if (runningProperty.get()) {
-							WorkLogEntry logEntry = getLogEntryForToday();
-							if (logEntry.getEndTime() != null) {
-								throw new IllegalStateException();
-							}
-							Instant startTime = logEntry.getStartTime();
-
-							Duration duration = Duration
-									.between(startTime, now);
-							workedTimeDayProperty.set(duration);
-
-							log.getWorkLogEntriesForToday()
-									.stream()
-									.filter(log -> log.getEndTime() != null)
-									.forEach(
-											l -> {
-												workedTimeDayProperty
-														.set(workedTimeDayProperty
-																.get()
-																.plus(Duration
-																		.between(
-																				l.getStartTime(),
-																				l.getEndTime())));
-											});
-
-							workedTimeOfDayProperty.set(Double
-									.valueOf(workedTimeDayProperty.get()
-											.toMinutes())
-									/ Duration.ofHours(8).toMinutes());
-
-							workedTimeInWeekProperty.set(Duration.ZERO);
-							log.getWorkLogEntriesForWeek()
-									.stream()
-									.forEach(
-											l -> {
-												Duration d = Duration.between(
-														l.getStartTime(),
-														Optional.ofNullable(
-																l.getEndTime())
-																.orElse(now));
-												workedTimeInWeekProperty
-														.set(workedTimeInWeekProperty
-																.get().plus(d));
-											});
-
-							workedTimeOfWeekProperty.set(Double
-									.valueOf(workedTimeInWeekProperty.get()
-											.toMinutes())
-									/ Duration.ofHours(40).toMinutes());
+							updateWorkTimeOfDay();
+							updateWorkTimeOfWeek();
 						}
 
 					}
@@ -184,15 +138,18 @@ public class ViewModel {
 			}
 		}, 0, 1, TimeUnit.SECONDS);
 
-		log = loadInitialWorkingLog();
+		log.addListener(new ChangeListener<WorkingLog>() {
 
-		log.getLastWorkLogEntryForToday()
-				.filter(logEntry -> logEntry.getEndTime() == null)
-				.ifPresent(logEntry -> {
-					runningProperty.set(true);
+			@Override
+			public void changed(
+					ObservableValue<? extends WorkingLog> observable,
+					WorkingLog oldValue, WorkingLog newValue) {
 
-					System.out.println("running");
-				});
+				update(newValue);
+			}
+		});
+
+		log.set(loadInitialWorkingLog());
 	}
 
 	public void openLog(File file) {
@@ -201,17 +158,7 @@ public class ViewModel {
 
 		recentlyOpenedLogFilesProperty.add(file);
 
-		log = WorkingLog.load(file).orElseThrow(() -> new RuntimeException());
-
-		log.getLastWorkLogEntryForToday()
-				.filter(logEntry -> logEntry.getEndTime() == null)
-				.ifPresent(logEntry -> {
-					runningProperty().set(true);
-
-					System.out.println("running");
-				});
-
-		update();
+		log.set(WorkingLog.load(file).orElseThrow(() -> new RuntimeException()));
 	}
 
 	public ObservableList<File> recentlyOpenedLogFilesProperty() {
@@ -223,7 +170,7 @@ public class ViewModel {
 	}
 
 	public void saveLog(File file) {
-		log.save(file);
+		log.get().save(file);
 
 		config.setLastOpenedLogFile(file);
 		onChangedConfig();
@@ -233,27 +180,41 @@ public class ViewModel {
 		runningProperty.set(true);
 
 		Instant startTime = Instant.now();
-		log.getWorkLogEntries().add(new WorkLogEntry(startTime));
 
-		// TODO
-		update();
+		updateWorkingLog(l -> l.getWorkLogEntries().add(
+				new WorkLogEntry(startTime)));
+	}
+
+	private void updateWorkingLog(Consumer<WorkingLog> updateFunction) {
+		updateFunction.accept(log.get());
+
+		// TODO simulate change event
+		update(log.get());
 	}
 
 	public void stop() {
 		runningProperty.set(false);
 
-		WorkLogEntry logEntry = getLogEntry();
-		if (logEntry.getEndTime() != null) {
-			throw new IllegalStateException();
-		}
-		logEntry.setEndTime(Instant.now());
+		updateWorkingLog(log -> {
+			WorkLogEntry logEntry = log.getLastWorkLogEntryForToday()
+					.orElseThrow(() -> new IllegalStateException());
 
-		// TODO
-		update();
+			if (logEntry.getEndTime() != null) {
+				throw new IllegalStateException();
+			}
+
+			logEntry.setEndTime(Instant.now());
+		});
 	}
 
-	// TODO
-	public void update() {
+	private void update(WorkingLog log) {
+
+		log.getLastWorkLogEntryForToday()
+				.filter(logEntry -> logEntry.getEndTime() == null)
+				.ifPresent(logEntry -> {
+					runningProperty.set(true);
+				});
+
 		updateWorkTimeOfDay();
 		updateWorkTimeOfWeek();
 
@@ -281,18 +242,6 @@ public class ViewModel {
 		return workLogEntryProperty;
 	}
 
-	private WorkLogEntry getLogEntry() {
-		WorkLogEntry logEntry = log.getLastWorkLogEntryForToday().orElseThrow(
-				() -> new IllegalStateException());
-		return logEntry;
-	}
-
-	private WorkLogEntry getLogEntryForToday() {
-		WorkLogEntry logEntry = log.getLastWorkLogEntryForToday().orElseThrow(
-				() -> new IllegalStateException());
-		return logEntry;
-	}
-
 	private Configuration loadConfig() {
 		return Configuration.load().orElse(new Configuration());
 	}
@@ -312,20 +261,19 @@ public class ViewModel {
 	}
 
 	private void updateWorkTimeOfDay() {
-		// TODO DRY
-
 		workedTimeDayProperty.set(Duration.ZERO);
 
-		log.getWorkLogEntriesForToday()
+		log.get()
+				.getWorkLogEntriesForToday()
 				.stream()
-				.filter(log -> log.getEndTime() != null)
 				.forEach(
-						logEntry -> {
+						l -> {
+							Duration d = Duration.between(
+									l.getStartTime(),
+									Optional.ofNullable(l.getEndTime()).orElse(
+											Instant.now()));
 							workedTimeDayProperty.set(workedTimeDayProperty
-									.get().plus(
-											Duration.between(
-													logEntry.getStartTime(),
-													logEntry.getEndTime())));
+									.get().plus(d));
 						});
 
 		workedTimeOfDayProperty.set(Double.valueOf(workedTimeDayProperty.get()
@@ -333,17 +281,18 @@ public class ViewModel {
 	}
 
 	private void updateWorkTimeOfWeek() {
-		// TODO DRY
 		workedTimeInWeekProperty.set(Duration.ZERO);
-		log.getWorkLogEntriesForWeek()
+		log.get()
+				.getWorkLogEntriesForWeek()
 				.stream()
-				.filter(log -> log.getEndTime() != null)
 				.forEach(
 						l -> {
+							Duration d = Duration.between(
+									l.getStartTime(),
+									Optional.ofNullable(l.getEndTime()).orElse(
+											Instant.now()));
 							workedTimeInWeekProperty
-									.set(workedTimeInWeekProperty.get().plus(
-											Duration.between(l.getStartTime(),
-													l.getEndTime())));
+									.set(workedTimeInWeekProperty.get().plus(d));
 						});
 
 		workedTimeOfWeekProperty.set(Double.valueOf(workedTimeInWeekProperty
