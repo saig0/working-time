@@ -11,6 +11,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.FormatStyle;
+import java.util.Comparator;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -41,7 +42,7 @@ import javafx.stage.Stage;
 
 public class Controller {
 
-	@FXML
+  @FXML
 	private CheckMenuItem automaticSaveField;
 
 	@FXML
@@ -245,6 +246,7 @@ public class Controller {
 
 		dateColumn.setCellValueFactory(cellData -> getDateAsProperty(cellData
 				.getValue().getStartTime()));
+		dateColumn.setComparator(new DateComparator());
 
 		startTimeColumn
 				.setCellValueFactory(cellData -> getTimeAsProperty(cellData
@@ -278,6 +280,8 @@ public class Controller {
 
 						workLogTable.getItems().clear();
 						workLogTable.getItems().addAll(change.getList());
+
+						workLogTable.getSortOrder().add(dateColumn);
 
 					}
 				});
@@ -369,5 +373,15 @@ public class Controller {
        // TODO cancel edit field
      }
    }
+
+	 private final class DateComparator implements Comparator<String> {
+	    @Override
+	    public int compare(String o1, String o2) {
+	      LocalDate date1 = LocalDate.from(dateFormatter.parse(o1));
+	      LocalDate date2 = LocalDate.from(dateFormatter.parse(o2));
+
+	      return date1.compareTo(date2);
+	    }
+	  }
 
 }

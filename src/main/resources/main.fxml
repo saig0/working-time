@@ -172,7 +172,7 @@
                                  <children>
                                     <TableView fx:id="workLogTable" prefHeight="285.0" prefWidth="263.0">
                                       <columns>
-                                          <TableColumn fx:id="dateColumn" editable="false" text="Datum" />
+                                          <TableColumn fx:id="dateColumn" editable="false" sortType="DESCENDING" text="Datum" />
                                         <TableColumn fx:id="startTimeColumn" onEditCommit="#changeStartTime" prefWidth="55.0" sortable="false" text="Start" />
                                         <TableColumn fx:id="endTimeColumn" onEditCommit="#changeEndTime" prefWidth="55.0" sortable="false" text="Ende" />
                                           <TableColumn fx:id="durationColumn" editable="false" prefWidth="55.0" sortable="false" text="Dauer" />
