@@ -24,6 +24,8 @@ public class Configuration {
 
 	private boolean automaticSave = false;
 
+	private boolean editableLog = false;
+
 	private File defaultLogFileLocation = new File(
 			System.getProperty("user.home"));
 
@@ -71,4 +73,12 @@ public class Configuration {
 	public void setRecentlyOpenedLogFiles(List<File> recentlyOpenedLogFiles) {
 		this.recentlyOpenedLogFiles = recentlyOpenedLogFiles;
 	}
+
+  public boolean isEditableLog() {
+    return editableLog;
+  }
+
+  public void setEditableLog(boolean editableLog) {
+    this.editableLog = editableLog;
+  }
 }

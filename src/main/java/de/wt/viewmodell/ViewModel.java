@@ -9,6 +9,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import de.wt.model.Configuration;
+import de.wt.model.WorkLogEntry;
+import de.wt.model.WorkingLog;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
@@ -21,13 +24,13 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import de.wt.model.Configuration;
-import de.wt.model.WorkLogEntry;
-import de.wt.model.WorkingLog;
 
 public class ViewModel {
 
 	private final BooleanProperty automaticSaveProperty = new SimpleBooleanProperty();
+
+	private final BooleanProperty editableLog = new SimpleBooleanProperty();
+
 	private Configuration config;
 
 	private ObjectProperty<Instant> currentDateProperty = new SimpleObjectProperty<Instant>(
@@ -110,6 +113,16 @@ public class ViewModel {
 				onChangedConfig();
 			}
 		});
+
+		editableLog.set(config.isEditableLog());
+		editableLog.addListener(new ChangeListener<Boolean>() {
+
+      @Override
+      public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+        config.setEditableLog(newValue);
+        onChangedConfig();
+      }
+    });
 
 		recentlyOpenedLogFilesProperty.addAll(config
 				.getRecentlyOpenedLogFiles());
@@ -209,11 +222,9 @@ public class ViewModel {
 
 	private void update(WorkingLog log) {
 
-		log.getLastWorkLogEntryForToday()
-				.filter(logEntry -> logEntry.getEndTime() == null)
-				.ifPresent(logEntry -> {
-					runningProperty.set(true);
-				});
+		boolean isRunning = log.getLastWorkLogEntryForToday()
+				.filter(logEntry -> logEntry.getEndTime() == null).isPresent();
+    runningProperty.set(isRunning);
 
 		updateWorkTimeOfDay();
 		updateWorkTimeOfWeek();
@@ -298,5 +309,25 @@ public class ViewModel {
 		workedTimeOfWeekProperty.set(Double.valueOf(workedTimeInWeekProperty
 				.get().toMinutes()) / Duration.ofHours(40).toMinutes());
 	}
+
+  public BooleanProperty editableLogProperty() {
+    return editableLog;
+  }
+
+  public void setStartTime(WorkLogEntry logEntry, Instant startTime) {
+    updateWorkingLog(log -> {
+      int index = log.getWorkLogEntries().indexOf(logEntry);
+      WorkLogEntry workLogEntry = log.getWorkLogEntries().get(index);
+      workLogEntry.setStartTime(startTime);
+    });
+  }
+
+  public void setEndTime(WorkLogEntry logEntry, Instant endTime) {
+    updateWorkingLog(log -> {
+      int index = log.getWorkLogEntries().indexOf(logEntry);
+      WorkLogEntry workLogEntry = log.getWorkLogEntries().get(index);
+      workLogEntry.setEndTime(endTime);
+    });
+  }
 
 }

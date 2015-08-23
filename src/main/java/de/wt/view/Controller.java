@@ -3,13 +3,19 @@ package de.wt.view;
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.format.FormatStyle;
 import java.util.Locale;
 import java.util.Optional;
 
+import de.wt.model.WorkLogEntry;
+import de.wt.viewmodell.ViewModel;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
@@ -25,18 +31,21 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.TableView;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
-import de.wt.model.WorkLogEntry;
-import de.wt.viewmodell.ViewModel;
 
 public class Controller {
 
 	@FXML
 	private CheckMenuItem automaticSaveField;
+
+	@FXML
+	private CheckMenuItem editableLogField;
 
 	@FXML
 	private TableColumn<WorkLogEntry, String> dateColumn;
@@ -240,11 +249,14 @@ public class Controller {
 		startTimeColumn
 				.setCellValueFactory(cellData -> getTimeAsProperty(cellData
 						.getValue().getStartTime()));
+		startTimeColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+
 		endTimeColumn.setCellValueFactory(cellData -> {
 			return Optional.ofNullable(cellData.getValue().getEndTime())
 					.map(endTime -> getTimeAsProperty(endTime))
 					.orElse(new SimpleStringProperty(""));
 		});
+		endTimeColumn.setCellFactory(TextFieldTableCell.forTableColumn());
 
 		durationColumn.setCellValueFactory(cellData -> {
 			String formattedWorkTime = Optional
@@ -254,6 +266,8 @@ public class Controller {
 					.orElse("");
 			return new SimpleStringProperty(formattedWorkTime);
 		});
+
+		workLogTable.editableProperty().bind(editableLogField.selectedProperty());
 
 		viewModel.workLogEntryProperty().addListener(
 				new ListChangeListener<WorkLogEntry>() {
@@ -270,6 +284,7 @@ public class Controller {
 
 		automaticSaveField.selectedProperty().bindBidirectional(
 				viewModel.automaticSaveProperty());
+		editableLogField.selectedProperty().bindBidirectional(viewModel.editableLogProperty());
 
 		viewModel.runningProperty().addListener(new ChangeListener<Boolean>() {
 
@@ -317,5 +332,42 @@ public class Controller {
 	private void openLogFile(File file) {
 		viewModel.openLog(file);
 	}
+
+	 private Instant atTime(Instant instant, String timeAsString) throws DateTimeParseException {
+     LocalDate localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate();
+     LocalTime localTime = LocalTime.from(timeFormatter.parse(timeAsString));
+     ZonedDateTime zonedDateTime = localDate.atTime(localTime).atZone(ZoneId.systemDefault());
+     return zonedDateTime.toInstant();
+   }
+
+	 @FXML
+	 public void changeStartTime(CellEditEvent<WorkLogEntry, String> event) {
+     WorkLogEntry logEntry = event.getRowValue();
+     String timeAsString = event.getNewValue();
+
+     try {
+       Instant newStartTime = atTime(logEntry.getStartTime(), timeAsString);
+       viewModel.setStartTime(logEntry, newStartTime);
+
+       onChangedWorkingLog();
+     } catch (DateTimeParseException e) {
+       // TODO cancel edit field
+     }
+   }
+
+	 @FXML
+	 public void changeEndTime(CellEditEvent<WorkLogEntry, String> event) {
+     WorkLogEntry logEntry = event.getRowValue();
+     String timeAsString = event.getNewValue();
+
+     try {
+       Instant newEndTime = atTime(logEntry.getStartTime(), timeAsString);
+       viewModel.setEndTime(logEntry, newEndTime);
+
+       onChangedWorkingLog();
+     } catch (DateTimeParseException e) {
+       // TODO cancel edit field
+     }
+   }
 
 }
